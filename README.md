@@ -10,20 +10,15 @@ https://openclassrooms.com/fr/paths/322/projects/832/assignment
 ## Setting the environment
 This script was written using python3.8.9. 
 
-Creating the environment 
+Create the environment and activate it
 
-```python3 -m venv env```
+`python3 -m venv env`
 
-if you are using python2, you might want to upgrade as 
+`source env/bin/activate`
+ 
+Install necessary packages with 
 
-Environment can be activated using 
-
-```source env/bin/activate```
-
-if  
-```pip install -f requirements.txt```
-
-this will install all required modules and packages
+```pip install -r requirements.txt```
 
 ## Running the script
 Once you've activated your environment and made sure all required packages are correctly set up, go and run
