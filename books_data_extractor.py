@@ -19,7 +19,9 @@ from bs4 import BeautifulSoup
 import re # just used once, à voir si ça reste
 import math
 import os
-# import pandas # https://stackoverflow.com/questions/63296554/python-multiple-sheet-to-export-as-csv  pour l'export en differentes sheets
+# import pandas
+# https://stackoverflow.com/questions/63296554/python-multiple-sheet-to-export-as-csv  pour l'export en differentes sheets
+
 
 def export_to_csv(output_dir_path, category_name, book_infos_list):
     """
@@ -34,10 +36,12 @@ def export_to_csv(output_dir_path, category_name, book_infos_list):
         my_writer = csv.writer(csv_file, delimiter=delim)
         my_writer.writerows(book_infos_list)
 
-    print(str(len(book_infos_list)-1) + "/" + str(nb_books_in_category), 'books added to "' + exported_file_name + '"')
+    print(str(len(book_infos_list)-1), 'books added to "' + exported_file_name + '"')
+    # TODO add a test len(book_infos_list)-1 == nb_books_in_category
     return 0
 
-def get_book_infos(product_page_url):
+
+def get_book_infos(category_name, product_page_url):
     """
     Gets the info from a given book page
     """
@@ -54,7 +58,7 @@ def get_book_infos(product_page_url):
     }
 
     # extracting all the relevant fields
-    book_infos = {
+    article_info = {
         'product_page_url': product_page_url,
         'universal_product_code': product_info_list[0].text,
         'title': product_page_article.h1.text,
@@ -67,51 +71,54 @@ def get_book_infos(product_page_url):
         "review_rating": str_to_int_dict[article_html.p['class'][1]],
         "image_url": product_page_article.img['src'].replace('../../', index_url),
     }
-    return book_infos
+    return article_info
+
+def get_book_list(category_name, category_url):
+    """
+    Get a list of books from a category_url
+    """
+    # Getting index page and initial books list
+    category_page = BeautifulSoup(requests.get(category_url).text, 'html.parser')
+    books_list = category_page.find_all('article')
+
+    # Making a master soup containing all articles over printing page by page (or worst, book by book)
+    # For category with more than one page :
+    #   getting the number of books (and thus the number of extra pages) and accessing pages directly
+    #   over using pager to extract total number of pages and getting page link
+
+    # Getting potential additional pages
+    nb_books_in_category = int(category_page.form.strong.text)
+    nb_pages_in_category = math.ceil(nb_books_in_category / 20)
+
+    # if category has more than 20 books, add the other pages' books to books_list
+    for extra_page_nb in range(2, nb_pages_in_category + 1):
+        extra_page_url = category_url.replace('index.html', 'page-' + str(extra_page_nb) + '.html')
+        extra_books = BeautifulSoup(requests.get(extra_page_url).text, 'html.parser').find_all('article')
+        books_list.extend(extra_books)
+        # print("category_bookslist has", len(category_articles_list), "books. ")
+
+    return books_list
+
 
 if __name__ == "__main__":
     # Getting index
     index_url = "http://books.toscrape.com/"
     response = requests.get(index_url)
 
-    html = BeautifulSoup(response.text, 'html.parser')
+    index_soup = BeautifulSoup(response.text, 'html.parser')
 
     # Preping the output dir
     output_dir_path = 'extraction_' + dt.now().strftime('%Y%m%d_%H%M%S')
     os.mkdir(output_dir_path)
 
     # Get the list of all categories and browse it
-    category_list = html.find_all("ul")[2].find_all('a')
+    category_list = index_soup.find_all("ul")[2].find_all('a')
 
     for category in category_list[9:10]:  # sublist the list for testing purposes
         category_name = category.text.strip()
         category_url = index_url + category['href']
-        category_page = BeautifulSoup(requests.get(category_url).text, 'html.parser')
 
-        # ! hesitation between :
-        # 1) making a 'category_complete' qui contiendrait les soupes de toutes les pages
-        # 2) browsing pages and writing page by page
-
-        # Getting potential additional pages
-        nb_books_in_category = int(category_page.form.strong.text)
-        nb_pages_in_category = math.ceil(nb_books_in_category/20)
-
-        # Same thing through pager ?
-        # if category_page.find(class_='pager'):
-        #     # link to next page
-        #     # category_page.find(class_='pager').a['href'] != 'NoneType'
-        #     # category_url.replace('index.html', 'page-2.html')
-        #     nb_pages = category_page.find(class_='pager').li.text.rstrip()[-1]
-
-        # Getting all books on this page
-        book_list = category_page.find_all('article')
-
-        # if category has more than 20 books, add the other pages' books to category_bookslist
-        for extra_page_nb in range(2,nb_pages_in_category+1):
-            extra_page_url = index_url + category['href'].replace('index.html', 'page-' + str(extra_page_nb) + '.html')
-            extra_books = BeautifulSoup(requests.get(extra_page_url).text, 'html.parser').find_all('article')
-            book_list.extend(extra_books)
-            # print("category_bookslist has", len(category_articles_list), "books. ")
+        book_list = get_book_list(category_name, category_url)
 
         # Initializing the list for this category
         output_list = []
@@ -120,7 +127,7 @@ if __name__ == "__main__":
         # which contains all books of this category
         for article_html in book_list:
             product_page_url = article_html.a['href'].replace('../../../', index_url + 'catalogue/').replace('index.html', '')
-            book_infos = get_book_infos(product_page_url)
+            book_infos = get_book_infos(category_name, product_page_url)
 
             # first time, prints header
             if article_html == book_list[0]:
