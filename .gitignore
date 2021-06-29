@@ -1,3 +1,2 @@
 env/
-export_*.csv
-extract_*/
+extraction_*/
