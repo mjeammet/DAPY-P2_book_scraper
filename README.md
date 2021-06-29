@@ -7,14 +7,12 @@ Marie Jeammet - v0.1 - 2021/06
 ## Context
 This script is written using python 3.6.9 as part of our project to scrape all book prices and infos from http://books.toscrape.com/
 
-...  breaking character, this is an exercice as the 2nd project of 13 to becoming an app dev with python.
-https://openclassrooms.com/fr/paths/322/projects/832/assignment
-
 ## Usage
 
 ### Cloning the doc
 
-Clone directory 
+Clone directory into desired directory
+
 `git clone https://github.com/mjeammet/project2_book_scraper.git`
 
 ### Setting the environment
@@ -32,6 +30,6 @@ Install necessary packages with
 ## Running the script
 Once you've activated your environment and made sure all required packages are correctly set up, go and run
 
-```python price_extraction.py```
+`python price_extraction.py`
 
-This will create a `export_<date-time>.csv` file containing all extracted informations. 
+This will create an `extraction_<date>_<time>` folder containing a file for each extracted book category.
