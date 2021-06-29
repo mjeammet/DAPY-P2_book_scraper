@@ -1,17 +1,23 @@
-# Book scraper
-Marie Jeammet - v0.1 - 2021/06 
 ![name-of-you-image](https://user.oc-static.com/upload/2020/09/22/1600779540759_Online%20bookstore-01.png)
 
+# Book scraper
+
+Marie Jeammet - v0.1 - 2021/06 
+
 ## Context
-This script is written as part of our project to scrape all book prices and infos from http://books.toscrape.com/
+This script is written using python 3.6.9 as part of our project to scrape all book prices and infos from http://books.toscrape.com/
 
 ...  breaking character, this is an exercice as the 2nd project of 13 to becoming an app dev with python.
 https://openclassrooms.com/fr/paths/322/projects/832/assignment
 
 ## Usage
 
+### Cloning the doc
+
+Clone directory 
+`git clone https://github.com/mjeammet/project2_book_scraper.git`
+
 ### Setting the environment
-This script was written using python3.8.9. 
 
 Create the environment and activate it
 

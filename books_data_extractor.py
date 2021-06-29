@@ -10,6 +10,7 @@ Usage:
 __authors__ = "Marie Jeammet"
 __contact__ = "marie.jeammet@protonmail.com"
 __date__ = "2021/06"
+# -*- coding: utf-8 -*-
 
 import requests
 import csv
@@ -18,7 +19,7 @@ from bs4 import BeautifulSoup
 import re # just used once, à voir si ça reste
 import math
 import os
-import pandas # https://stackoverflow.com/questions/63296554/python-multiple-sheet-to-export-as-csv  pour l'export en differentes sheets
+# import pandas # https://stackoverflow.com/questions/63296554/python-multiple-sheet-to-export-as-csv  pour l'export en differentes sheets
 
 def export_to_csv(output_dir_path, book_info_table):
     """
@@ -33,16 +34,40 @@ def export_to_csv(output_dir_path, book_info_table):
 
     # prepare file name
     category_name = book_info_table[1][7].replace(' ', '_')
-    exported_file_name = output_dir_path + '/export_' + category_name + '.csv'
+    exported_file_name = output_dir_path + '/export_' + category_name.lower() + '.csv'
 
     # ! verifier que len(book_info_table)-1 est bien égal au nombre total de bouquins dans la catégorie
 
-    with open(exported_file_name, 'w', newline='') as csvfile:
-        my_writer = csv.writer(csvfile, delimiter=delim)
+    with open(exported_file_name, 'w', newline='', encoding="utf-8-sig") as csv_file:
+        my_writer = csv.writer(csv_file, delimiter=delim)
         my_writer.writerows(book_info_table)
 
     print(len(book_info_table) - 1, 'books added to "' + exported_file_name + '')
-    return 1
+    return 0
+
+def get_book_infos(product_page_url):
+    """
+    Gets the info from a given book page
+    """
+    product_page = BeautifulSoup(requests.get(product_page_url).content, 'html.parser')
+    product_page_article = product_page.body.article
+
+    # extracting all the relevant fields
+    title = product_page_article.h1.text
+    # category = product_page.ul.find_all('li')[2].text  # ! Add a test to check it's the same than the category
+    product_description = product_page.head.find_all("meta")[2]['content'].strip()
+    review_rating = article_html.p['class'][1]
+    image_url = product_page_article.img['src'].replace('../../', index_url)
+
+    product_info_list = product_page_article.table.find_all('td')
+    universal_product_code = product_info_list[0].text
+    price_excluding_tax = product_info_list[2].string
+    print(price_excluding_tax)
+    price_including_tax = product_info_list[3].text
+    number_available = re.split(', |\(| ', product_info_list[5].text)[3]
+
+    return [product_page_url, universal_product_code, title, price_including_tax, price_excluding_tax, number_available, product_description, category_name, review_rating, image_url]
+
 
 if __name__ == "__main__":
     # Getting index
@@ -59,7 +84,7 @@ if __name__ == "__main__":
         output_dir_path = 'extract_' + dt.now().strftime('%Y%m%d-%H%M%S')
         os.mkdir(output_dir_path)
 
-        for category in category_list: # sublist the list for testing purposes
+        for category in category_list[0:1]:  # sublist the list for testing purposes
             category_name = category.text.strip()
             category_url = index_url + category['href']
             category_page = BeautifulSoup(requests.get(category_url).text, 'html.parser')
@@ -94,27 +119,11 @@ if __name__ == "__main__":
                 book_list.extend(extra_books)
                 # print("category_bookslist has", len(category_articles_list), "books. ")
 
-            # Browse category_articles_list
+            # Browse books list
             # which contains all books of this category
             for article_html in book_list:
-                product_page_url = article_html.a['href'].replace('../../../', index_url + 'catalogue/')
-                product_page = BeautifulSoup(requests.get(product_page_url).text, 'html.parser')
-                product_page_article = product_page.body.article
-                # print(product_page)
-
-                # extracting all the relevant fields
-                title = product_page_article.h1.text
-                category = product_page.ul.find_all('li')[2].text  # ! Add a test to check it's the same than the category
-                product_description = product_page_article.h2
-                review_rating = article_html.p['class'][1]
-                image_url = product_page_article.img['src'].replace('../../', index_url)
-
-                product_info_list = product_page_article.table.find_all('td')
-                universal_product_code = product_info_list[0].text
-                price_excluding_tax = product_info_list[2].text
-                price_including_tax = product_info_list[3].text
-                number_available = re.split(', |\(| ', product_info_list[5].text)[3]
-
-                input_variable.append([product_page_url, universal_product_code, title, price_including_tax, price_excluding_tax, number_available, product_description, category_name, review_rating, image_url])
+                product_page_url = article_html.a['href'].replace('../../../', index_url + 'catalogue/').replace('index.html', '')
+                this_book_infos = get_book_infos(product_page_url)
+                input_variable.append(this_book_infos)
 
             export_to_csv(output_dir_path, input_variable)
