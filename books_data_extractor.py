@@ -23,38 +23,37 @@ import os
 # https://stackoverflow.com/questions/63296554/python-multiple-sheet-to-export-as-csv  pour l'export en differentes sheets
 
 
-def export_to_csv(book_infos_list, output_dir_path, book_category_name):
+def export_to_csv(category_info_dico, output_dir_path):
     """
     Export scraped book list to a csv file . Prints the amount of added books. Delimiter can be modified.
     Returns 1 if no exception.
     """
     delim = ";"  # default is ";" but delim character can also be "," or "\t"
-    formatted_category_name = book_category_name.replace(' ', '_').lower()
+    formatted_category_name = category_info_dico['category'][0].replace(' ', '_').lower()
 
     # prepare file name
     exported_file_name = output_dir_path + formatted_category_name + '.csv'
 
     with open(exported_file_name, 'w', newline='', encoding="utf-8-sig") as csv_file:
-        my_writer = csv.writer(csv_file, delimiter=delim)
-        my_writer.writerows(book_infos_list)
-
-
+        my_writer = csv.writer(csv_file, delimiter=';')
+        my_writer.writerow(list(category_info_dico.keys()))
+        my_writer.writerows(zip(*list(category_info_dico.values())))
 
     # load all covers to category folder
     cover_dir_path = output_dir_path + formatted_category_name + '_covers/'
     os.mkdir(cover_dir_path)
-    for book in book_infos_list[1:]:
+    for book in zip(*list(category_info_dico.values())):
         cover_url = book[9]
         upc = book[1]
         cover_data = requests.get(cover_url).content
         open(cover_dir_path + upc + '.jpg', 'wb').write(cover_data)
 
-    print(str(len(book_infos_list)-1), 'books added to "' + exported_file_name + '"')
-    # TODO add a test len(book_infos_list)-1 == nb_books_in_category
+    print(str(len(category_info_dico['title'])), 'books added to "' + exported_file_name + '"')
+    # TODO add a test str(len(category_info_dico['title'])) == nb_books_in_category
     return 0
 
 
-def get_book_infos(book_category_name, book_page_url):
+def update_info_dict(book_page_url, info_dico, book_category_name):
     """
     Gets the info from a given book page
     """
@@ -70,21 +69,19 @@ def get_book_infos(book_category_name, book_page_url):
         'Five': 5,
     }
 
-    # extracting all desired fields
-    article_info = {
-        'product_page_url': book_page_url,
-        'universal_product_code': product_info_list[0].text,
-        'title': product_page_article.h1.text,
-        "price_excluding_tax": product_info_list[2].text,
-        "price_including_tax": product_info_list[3].text,
-        "number_available": re.split(', |\(| ', product_info_list[5].text)[3],
-        "product_description": whole_page_soup.head.find_all("meta")[2]['content'].strip(),
-        'category': book_category_name,
-        # category = product_page.ul.find_all('li')[2].text  # ! Add a test to check it's the same than the category
-        "review_rating": str_to_int_dict[product_page_article.find(class_="star-rating")['class'][-1]],
-        "image_url": product_page_article.img['src'].replace('../../', index_url),
-    }
-    return article_info
+    # updating all dico fields
+    info_dico['product_page_url'].append(book_page_url)
+    info_dico['universal_product_code'].append(product_info_list[0].text)
+    info_dico['title'].append(product_page_article.h1.text)
+    info_dico["price_excluding_tax"].append(product_info_list[2].text)
+    info_dico["price_including_tax"].append(product_info_list[3].text)
+    info_dico["number_available"].append(re.split(', |\(| ', product_info_list[5].text)[3])
+    info_dico["product_description"].append(whole_page_soup.head.find_all("meta")[2]['content'].strip())
+    info_dico['category'].append(book_category_name)
+    info_dico["review_rating"].append(str_to_int_dict[product_page_article.find(class_="star-rating")['class'][-1]])
+    info_dico["image_url"].append(product_page_article.img['src'].replace('../../', index_url))
+
+    return info_dico
 
 
 def get_books_list(category_url):
@@ -136,17 +133,21 @@ if __name__ == "__main__":
         book_list = get_books_list(category_url)
 
         # Initializing the output_list for this category
-        output_list = []
-
+        info_dico = {'product_page_url': [],
+                       'universal_product_code': [],
+                       'title': [],
+                       "price_excluding_tax": [],
+                       "price_including_tax": [],
+                       "number_available": [],
+                       "product_description": [],
+                       'category': [],
+                       "review_rating": [],
+                       "image_url": [],
+    }
         # Browse books list
         # which contains all books of this category
         for article_html in book_list:
             book_url = article_html.a['href'].replace('../../../', index_url + 'catalogue/').replace('index.html', '')
-            book_infos = get_book_infos(category_name, book_url)
+            info_dico = update_info_dict(book_url, info_dico, category_name)
 
-            # first time, prints header
-            if article_html == book_list[0]:
-                output_list.append(list(book_infos.keys()))
-            output_list.append(list(book_infos.values()))
-
-        export_to_csv(output_list, output_dir_path, category_name)
+        export_to_csv(info_dico, output_dir_path)
