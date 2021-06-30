@@ -12,28 +12,29 @@ This project was created with Python 3.6.9
 
 ## Usage
 
-### Cloning the doc
+### Cloning the project
 
 Clone project the project to desired location: 
 
-```$ git clone https://github.com/mjeammet/project2_book_scraper.git```
+`$ git clone https://github.com/mjeammet/project2_book_scraper.git`
 
 ### Setting the environment
 
 In the project's directory, create and activate the environment: 
 
-```
-$ python3 -m venv env
-$ source env/bin/activate
-```
+`$ python3 -m venv env`
+
+and activate it 
+
+`$ source env/bin/activate`
  
 Install required packages with: 
 
-```$ pip install -r requirements.txt```
+`$ pip install -r requirements.txt`
 
 ## Running the script
 Once you've activated your environment and made sure all required packages are correctly set up, go and run: 
 
-```$ python books_data_extractor.py```
+`$ python books_data_extractor.py`
 
 This will create an `extraction_<date>_<time>` folder containing a file for each extracted book category.
