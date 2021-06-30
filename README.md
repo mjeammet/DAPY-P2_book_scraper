@@ -22,8 +22,10 @@ Clone project the project to desired location:
 
 In the project's directory, create and activate the environment: 
 
-```$ python3 -m venv env
-$ source env/bin/activate```
+```
+$ python3 -m venv env
+$ source env/bin/activate
+```
  
 Install required packages with: 
 
