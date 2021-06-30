@@ -23,18 +23,31 @@ import os
 # https://stackoverflow.com/questions/63296554/python-multiple-sheet-to-export-as-csv  pour l'export en differentes sheets
 
 
-def export_to_csv(output_dir_path, book_category_name, book_infos_list):
+def export_to_csv(book_infos_list, output_dir_path, book_category_name):
     """
-    Export scraped book list to a csv file . Prints the amount of printed lines. Delimiter can be modified. Returns 1 if no exception.
+    Export scraped book list to a csv file . Prints the amount of added books. Delimiter can be modified.
+    Returns 1 if no exception.
     """
     delim = ";"  # default is ";" but delim character can also be "," or "\t"
+    formatted_category_name = book_category_name.replace(' ', '_').lower()
 
     # prepare file name
-    exported_file_name = output_dir_path + '/' + book_category_name.replace(' ', '_').lower() + '.csv'
+    exported_file_name = output_dir_path + formatted_category_name + '.csv'
 
     with open(exported_file_name, 'w', newline='', encoding="utf-8-sig") as csv_file:
         my_writer = csv.writer(csv_file, delimiter=delim)
         my_writer.writerows(book_infos_list)
+
+
+
+    # load all covers to category folder
+    cover_dir_path = output_dir_path + formatted_category_name + '_covers/'
+    os.mkdir(cover_dir_path)
+    for book in book_infos_list[1:]:
+        cover_url = book[9]
+        upc = book[1]
+        cover_data = requests.get(cover_url).content
+        open(cover_dir_path + upc + '.jpg', 'wb').write(cover_data)
 
     print(str(len(book_infos_list)-1), 'books added to "' + exported_file_name + '"')
     # TODO add a test len(book_infos_list)-1 == nb_books_in_category
@@ -109,7 +122,7 @@ if __name__ == "__main__":
     index_soup = BeautifulSoup(response.content, 'html.parser')
 
     # Preping the output dir
-    output_dir_path = 'extraction_' + dt.now().strftime('%Y%m%d_%H%M%S')
+    output_dir_path = 'extraction_' + dt.now().strftime('%Y%m%d_%H%M%S') + '/'
     os.mkdir(output_dir_path)
 
     # Get the list of all categories and browse it
@@ -136,4 +149,4 @@ if __name__ == "__main__":
                 output_list.append(list(book_infos.keys()))
             output_list.append(list(book_infos.values()))
 
-        export_to_csv(output_dir_path, category_name, output_list)
+        export_to_csv(output_list, output_dir_path, category_name)

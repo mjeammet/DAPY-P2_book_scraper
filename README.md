@@ -5,7 +5,11 @@
 Marie Jeammet - v0.1 - 2021/06 
 
 ## Context
-This project is a simple scraper, extracting detailed information about the books available at http://books.toscrape.com/
+This project is a simple ETL tool, extracting detailed information about books available at http://books.toscrape.com/. Output is a folder containing, for each category: 
+..* a .csv file listing extracted data
+..* a folder containing book covers 
+
+Typically runs in ~ 15 minutes.
 
 ## Technologies
 This project was created with Python 3.6.9
@@ -37,4 +41,4 @@ Once you've activated your environment and made sure all required packages are c
 
 `$ python books_data_extractor.py`
 
-This will create an `extraction_<date>_<time>` folder containing a file for each extracted book category.
+This will create an `extraction_<date>_<time>` folder containing a file and a covers folder for each extracted book category.
